@@ -1,3 +1,4 @@
+import doctest
 
 class Pump:
 	pass
@@ -37,14 +38,15 @@ def emitter(func):
 
 	>>> def r():
 	...    sleep(1)
-    ...    return 'test\n'
+    ...    return 'test\\n' 
+	... 
 	>>> e = emitter(r)
 	>>> e.pipe(sys.stdout)
 	>>> e.join()
-		test
-		test
-		test
-		...
+	test
+	test
+	test
+	...
 	"""
 	pass
 
@@ -60,3 +62,39 @@ def tee(f):
 
 	"""
 	pass
+
+def engine(cmd):
+	"""wraps a Popen-compatible command and returns an Engine object. The engine object
+	pipes incoming data to stdin of the process and pumps stdout. 
+	
+	>>> e = engine('cat')
+	>>> e.pipe(sys.stdout)
+	>>> e.write('test')
+	>>> e.join()
+	test
+	
+	"""
+	pass
+
+def turbine(func):
+	"""wraps a function func and returns a Turbine object. The turbine pipes incoming data into func,
+	and pumps the output. The function should take one argument, which will be a chunk of data, and
+	return a tuple (backup, output).
+
+	>>> def parse_sentences(chunk):
+	...		split = chunk.rsplit('.', 1)
+	...		return (split[0].replace('.', '\n', split[1])
+	>>> p = pump(open('test.txt'))
+	>>> t = turbine(parse_sentences)
+	>>> p.pipe(t).pipe(sys.stdout)
+	this is a test.
+	this is another test.
+	test.
+	stuff.
+	testing.
+
+	"""
+
+if __name__ == "__main__":
+	import doctest
+	doctest.testmod()
