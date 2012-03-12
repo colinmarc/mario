@@ -37,8 +37,8 @@ def emitter(func):
 	Return false from func to stop emitting.
 
 	>>> def r():
-	...    sleep(1)
-    ...    return 'test\\n' 
+	...		sleep(1)
+    ...		return 'test\\n' 
 	... 
 	>>> e = emitter(r)
 	>>> e.pipe(sys.stdout)
@@ -84,9 +84,11 @@ def turbine(func):
 	>>> def parse_sentences(chunk):
 	...		split = chunk.rsplit('.', 1)
 	...		return (split[0].replace('.', '\n', split[1])
+	... 
 	>>> p = pump(open('test.txt'))
 	>>> t = turbine(parse_sentences)
 	>>> p.pipe(t).pipe(sys.stdout)
+	>>> p.join()
 	this is a test.
 	this is another test.
 	test.
