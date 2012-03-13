@@ -57,7 +57,7 @@ class Plumbing(object):
 
 class Pump(Plumbing):
 	def __init__(self, f):
-		super().__init__()
+		super(Pump, self).__init__()
 		self.f = f
 
 	def read(self, chunk_size):
@@ -68,7 +68,7 @@ class Pump(Plumbing):
 
 class Source(Plumbing):
 	def __init__(self, func):
-		super().__init__()
+		super(Source, self).__init__()
 		self.func = func
 		self.buf = b''
 
@@ -82,7 +82,7 @@ class Source(Plumbing):
 
 class Union(Plumbing):
 	def __init__(self):
-		super().__init__()
+		super(Union, self).__init__()
 		self.buf = b''
 
 	def read(self, chunk_size):
@@ -98,7 +98,7 @@ class Engine(Plumbing):
 
 class Turbine(Plumbing):
 	def __init__(self, func):
-		super().__init__()
+		super(Turbine, self).__init__()
 		self.func = func
 		self.output_buf = b''
 		self.input_buf = b''
