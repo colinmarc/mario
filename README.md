@@ -4,6 +4,8 @@ Mario.py
 
 This is a convenience library for binary and text streams. It really only works with the former right now. It should work in Python 2.7-3.x.
 
+**warning: very little works yet!**
+
 Usage:
 -----------
 
