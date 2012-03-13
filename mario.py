@@ -1,102 +1,121 @@
+from io import TextIOBase 
+import json
 import doctest
 
-class Pump:
+CHUNK_SIZE = 4096
+
+def _run_pipeline(pipeline, chunk_size=CHUNK_SIZE):
+	while len(pipeline) > 1:
+		for i, part in enumerate(pipeline):	
+			if i+1 == len(pipeline):
+				break	
+		
+			chunk = part.read(chunk_size)
+			if not chunk and i == 0:
+				pipeline.pop(0)
+				break
+
+			next_part = pipeline[i+1]
+			if isinstance(next_part, TextIOBase):
+				next_part.buffer.write(chunk)
+			else:
+				next_part.write(chunk)
+			if hasattr(next_part, 'flush'):
+				next_part.flush()
+			
+class Plumbing(object):	
+	def __init__(self):
+		self.parent = None
+		self.child = None
+
+	def pipe(self, f):
+		self.child = f
+		if isinstance(f, Plumbing):
+			f.parent = self
+			return f
+
+	def start(self, chunk_size=None):
+		if not chunk_size:
+			chunk_size = CHUNK_SIZE
+		pipeline = []
+		l = self
+		#TODO trees
+		while True:
+			pipeline.append(l)
+			l = l.child if hasattr(l, 'child') else None
+			if not l:
+				break
+		_run_pipeline(pipeline, chunk_size)
+
+	#abstract
+	def read(self, chunk_size):
+		raise IOError("device is not readable")
+
+	#abstract
+	def write(self, chunk):
+		raise IOError("device is not writeable")
+
+class Pump(Plumbing):
+	def __init__(self, f):
+		super().__init__()
+		self.f = f
+
+	def read(self, chunk_size):
+		data = self.f.read(chunk_size)
+		if not data:
+			return b''
+		return data
+
+class Source(Plumbing):
+	def __init__(self, func):
+		super().__init__()
+		self.func = func
+		self.buf = b''
+
+	def read(self, chunk_size):
+		data = self.buf
+		while len(data) < chunk_size:
+			data += self.func()
+
+		self.buf = data[chunk_size:]
+		return data[:chunk_size]
+
+class Union(Plumbing):
+	def __init__(self):
+		super().__init__()
+		self.buf = b''
+
+	def read(self, chunk_size):
+		data = self.buf
+		self.buf = data[chunk_size:]
+		return data[:chunk_size]
+		
+	def write(self, chunk):
+		self.buf += chunk
+
+class Engine(Plumbing):
 	pass
 
-class Pipe:
-	pass
+class Turbine(Plumbing):
+	def __init__(self, func):
+		super().__init__()
+		self.func = func
+		self.output_buf = b''
+		self.input_buf = b''
 
-class Emitter:
-	pass
+	def read(self, chunk_size):
+		data = b''
+		while len(data) < chunk_size:
+			backup, output = self.func(self.input_buf)	
+			self.input_buf = backup
+			
+			if not output:
+				break
+			data += output
 
-def pump(f):
-	"""reads from file-like object f and returns a Pump object.
+		self.output_buf = data[chunk_size:]
+		return data[:chunk_size]
 
-	>>> with open('test.txt') as f:
-		    p = pump(f).pipe(sys.stdout)
-			p.join()
+	def write(self, chunk):
+		self.input_buf += chunk
 
-	"""
-	pass
-
-def pipe():
-	"""mimes a file-like object, and returns a Pipe object.
-
-	>>> p = Pipe()
-	>>> p.pipe(sys.stdout)
-	>>> p.write('test')
-	>>> p.join()
-	test
-
-	"""
-	pass
-
-def emitter(func):
-	"""returns an Emitter object that  runs the function func in a loop to generate output.
-	
-	Return false from func to stop emitting.
-
-	>>> def r():
-	...		sleep(1)
-    ...		return 'test\\n' 
-	... 
-	>>> e = emitter(r)
-	>>> e.pipe(sys.stdout)
-	>>> e.join()
-	test
-	test
-	test
-	...
-	"""
-	pass
-
-def tee(f):
-	"""pipes output to file-like object f, and also returns a pipe object.
-
-	>>> t = tee(sys.stderr)
-	>>> t.pipe(sys.stdout)
-	>>> t.write('test\n')
-	>>> t.join()
-	test
-	test
-
-	"""
-	pass
-
-def engine(cmd):
-	"""wraps a Popen-compatible command and returns an Engine object. The engine object
-	pipes incoming data to stdin of the process and pumps stdout. 
-	
-	>>> e = engine('cat')
-	>>> e.pipe(sys.stdout)
-	>>> e.write('test')
-	>>> e.join()
-	test
-	
-	"""
-	pass
-
-def turbine(func):
-	"""wraps a function func and returns a Turbine object. The turbine pipes incoming data into func,
-	and pumps the output. The function should take one argument, which will be a chunk of data, and
-	return a tuple (backup, output).
-
-	>>> def parse_sentences(chunk):
-	...		split = chunk.rsplit('.', 1)
-	...		return (split[0].replace('.', '\n', split[1])
-	... 
-	>>> p = pump(open('test.txt'))
-	>>> t = turbine(parse_sentences)
-	>>> p.pipe(t).pipe(sys.stdout)
-	>>> p.join()
-	this is a test.
-	this is another test.
-	test.
-	stuff.
-	testing.
-
-	"""
-
-if __name__ == "__main__":
-	import doctest
-	doctest.testmod()
