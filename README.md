@@ -55,19 +55,19 @@ You can wrap a process, and pipe data to stdin and pump from stdout:
 
 Or wrap your own stream manglers. This would work for parsers, for example. The function you wrap should return a tuple of (backup, output), where backup is the data to put back into the buffer for next time.
 
-		>>> def newlines(chunk):
-		...		split = chunk.rsplit(b'.', 1)
-		...		if len(split) > 1:
-		...			return (split[1][1:], split[0].replace(b'.', '.\n') + '.\n')
-		... 	else:
-		...			return (chunk, b'')
-		>>> p = pump(open('paragraph.txt'))
-		>>> t = turbine(parse_sentences)
-		>>> p.pipe(t).pipe(sys.stdout)
-		>>> p.join()
-		The three stared heavily as the fog inside the ball began to disappear.	
-		The image inside the crystal ball was a short clip of Daisy and Rosalina cuddling Mario and kissing his cheek.
-		Peach felt her heart shatter into a million pieces.
-		Without a sound, tears streamed down her face.
+	>>> from mario import Pump, Turbine
+	>>> def newlines(chunk):
+	...		split = chunk.rsplit(b'.', 1)
+	...		if len(split) > 1:
+	...			return (split[1][1:], split[0].replace(b'.', '.\n') + '.\n')
+	... 	else:
+	...			return (chunk, b'')
+	>>> p = Pump(open('paragraph.txt'))
+	>>> p.pipe(Turbine(newlines)).pipe(sys.stdout)
+	>>> p.start(chunk_size=16)
+	The three stared heavily as the fog inside the ball began to disappear.	
+	The image inside the crystal ball was a short clip of Daisy and Rosalina cuddling Mario and kissing his cheek.
+	Peach felt her heart shatter into a million pieces.
+	Without a sound, tears streamed down her face.
 
 (text from [Super Mario: The Legend Of The Mushroom Kingdom](http://www.fanfiction.net/s/7866928/1/Super_Mario_The_Legend_Of_The_Mushroom_Kingdom))
