@@ -2,9 +2,9 @@
 Mario.py
 ========
 
-This is a convenience library for binary and text streams. It really only works with the former right now. It should work in Python 2.7-3.x.
+This is a convenience library for binary and text streams. It really only works with the former right now. It should work in Python 2.7 to 3.x.
 
-**warning: very little works yet!**
+**warning: nothing works yet.**
 
 Usage:
 -----------
@@ -13,7 +13,8 @@ Read from files:
 
 	>>> import sys
 	>>> from mario import Pump
-	>>> with Pump(open('test.txt')) as f:
+	>>> with open('test.txt') as f:
+	...		p = Pump(f)
 	...		p.pipe(sys.stdout)
 	...		p.start()
 	but our princess is in another castle!
@@ -29,31 +30,35 @@ This works with any file-like object, like sockets:
 	>>> sockfile = sock.makefile()
 	>>> p = Pump(sockfile)
 	>>> p.pipe(sockfile) #pipe it back into itself
+	>>> p.start(chunk_size=16)
 
-You can also write your own data sources:
+It also works with generators, including ones you write yourself:
 
+	>>> from time import sleep
 	>>> from mario import Source
 	>>> def r():
-	...		sleep(1)
-	...		return b'doo\n' 
+	...		while True:
+	...			sleep(1)
+	...			yield b'doo\n'
 	... 
-	>>> e = Source(r)
-	>>> e.pipe(sys.stdout)
-	>>> e.start(chunk_size=2)
+	>>> s = Pump(r())
+	>>> s.pipe(sys.stdout)
+	>>> s.start(chunk_size=2)
 	doo
 	doo
 	doo
+	...
 
 You can wrap a process, and pipe data to stdin and pump from stdout:
 
 	>>> from mario import Engine
 	>>> e = Engine('cat')
 	>>> e.pipe(sys.stdout)
-	>>> e.write('test')
+	>>> e.write('dog')
 	>>> e.start(chunk_size=1)
-	test
+	dog
 
-Or wrap your own stream manglers. This would work for parsers, for example. The function you wrap should return a tuple of (backup, output), where backup is the data to put back into the buffer for next time.
+Or wrap your own stream manglers. This would work for parsers, for example. The function you wrap should return a tuple of ``(backup, output)``, where backup is the data to put back into the buffer for next time.
 
 	>>> from mario import Pump, Turbine
 	>>> def newlines(chunk):
