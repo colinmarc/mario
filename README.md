@@ -13,7 +13,8 @@ Read from files:
 
 	>>> import sys
 	>>> from mario import Pump
-	>>> with Pump(open('test.txt')) as f:
+	>>> with open('test.txt') as f:
+	...		p = Pump(f)
 	...		p.pipe(sys.stdout)
 	...		p.start()
 	but our princess is in another castle!
@@ -29,6 +30,7 @@ This works with any file-like object, like sockets:
 	>>> sockfile = sock.makefile()
 	>>> p = Pump(sockfile)
 	>>> p.pipe(sockfile) #pipe it back into itself
+	>>> p.start(chunk_size=16)
 
 You can also write your own data sources:
 
@@ -37,9 +39,9 @@ You can also write your own data sources:
 	...		sleep(1)
 	...		return b'doo\n' 
 	... 
-	>>> e = Source(r)
-	>>> e.pipe(sys.stdout)
-	>>> e.start(chunk_size=2)
+	>>> s = Source(r)
+	>>> s.pipe(sys.stdout)
+	>>> s.start(chunk_size=2)
 	doo
 	doo
 	doo
@@ -53,7 +55,7 @@ You can wrap a process, and pipe data to stdin and pump from stdout:
 	>>> e.start(chunk_size=1)
 	test
 
-Or wrap your own stream manglers. This would work for parsers, for example. The function you wrap should return a tuple of (backup, output), where backup is the data to put back into the buffer for next time.
+Or wrap your own stream manglers. This would work for parsers, for example. The function you wrap should return a tuple of ``(backup, output)``, where backup is the data to put back into the buffer for next time.
 
 	>>> from mario import Pump, Turbine
 	>>> def newlines(chunk):
