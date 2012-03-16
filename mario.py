@@ -58,7 +58,10 @@ class Plumbing(object):
 class Pump(Plumbing):
 	def __init__(self, f):
 		super(Pump, self).__init__()
-		self.f = f
+		if isinstance(f, TextIOBase):
+			self.f = f.buffer
+		else:
+			self.f = f
 
 	def read(self, chunk_size):
 		data = self.f.read(chunk_size)
