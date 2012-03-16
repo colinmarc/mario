@@ -51,9 +51,9 @@ It also works with generators, including ones you write yourself:
 
 You can wrap a process, and pipe data to stdin and pump from stdout:
 
-	>>> from mario import Pump, Engine
-	>>> p = Pump(open('test.txt')).pipe(Engine('cowsay')).pipe(sys.stdout)
-	>>> p.start()
+	>>> import mario
+	>>> import sys
+	>>> mario.Engine('cowsay "moo!"').pipe(sys.stdout).start()
 	 ________________________________________
 	< but our princess is in another castle! >
 	 ----------------------------------------

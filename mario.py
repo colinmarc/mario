@@ -1,7 +1,9 @@
+import os
 from io import TextIOBase 
+import fcntl
 from collections import Iterator
 from socket import socket as SocketObj
-import json
+from subprocess import Popen, PIPE
 import doctest
 
 CHUNK_SIZE = 4096
@@ -101,11 +103,11 @@ class Pump(Plumbing):
 		self.f = f
 		if isinstance(f, SocketObj):
 			self._read = self._socket_read
+		elif isinstance(f, TextIOBase):
+			self._read = self._text_read
 		elif isinstance(f, Iterator):
 			self.buf = bytearray()
 			self._read = self._generator_read
-		elif isinstance(f, TextIOBase):
-			self._read = self._text_read
 		else:
 			self._read = self._file_read
 
@@ -148,8 +150,29 @@ class Union(Plumbing):
 	def write(self, chunk):
 		self.buf += chunk
 
+#TODO: still defeated by line buffering
 class Engine(Plumbing):
-	pass
+	def __init__(self, command):
+		super(Engine, self).__init__()
+		self.command = command
+		self.process = None
+		
+	def _check_started(self):
+		if not self.process:	
+			self.process = Popen(self.command, shell=True, stdout=PIPE, stdin=PIPE, bufsize=1)
+
+	def write(self, chunk):
+		self._check_started()
+		self.process.stdin.write(chunk)
+		self.process.stdin.flush()
+	
+	def read(self, chunk_size):
+		self._check_started()
+		data = self.process.stdout.read()
+
+		if not data:
+			return b''
+		return data
 
 class Turbine(Plumbing):
 	def __init__(self, func):
