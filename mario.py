@@ -80,7 +80,6 @@ class Pipe(Plumbing):
 
 	def _socket_write(self, chunk):
 		self.f.sendall(chunk)
-		self.f.flush()
 	
 	def _text_write(self, chunk):
 		self.f.buffer.write(chunk)
