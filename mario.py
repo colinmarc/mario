@@ -44,8 +44,12 @@ class Plumbing(object):
 		l = self
 		#TODO trees
 		while True:
+			if not l.parent:
+				break
+			l = l.parent
+		while True:
 			pipeline.append(l)
-			l = l.child if hasattr(l, 'child') else None
+			l = l.child
 			if not l:
 				break
 		_run_pipeline(pipeline, chunk_size)
