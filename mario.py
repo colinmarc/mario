@@ -35,7 +35,10 @@ class Plumbing(object):
 
 	def pipe(self, f):
 		if not isinstance(f, Plumbing):
-			f = Pipe(f)
+			if hasattr(f, '__call__'):
+				f = Turbine(f)
+			else:
+				f = Pipe(f)
 		self.child = f
 		f.parent = self
 		return f
@@ -97,6 +100,9 @@ class Pipe(Plumbing):
 	def close(self):
 		if hasattr(self.f, 'close'): self.f.close()
 
+def pipe(f):
+	return Pipe(f)
+
 class Pump(Plumbing):
 	def __init__(self, f):
 		super(Pump, self).__init__()
@@ -137,6 +143,9 @@ class Pump(Plumbing):
 	def close(self):
 		if hasattr(self.f, 'close'): self.f.close()
 
+def pump(f):
+	return Pump(f)
+
 class Union(Plumbing):
 	def __init__(self):
 		super(Union, self).__init__()
@@ -149,6 +158,9 @@ class Union(Plumbing):
 		
 	def write(self, chunk):
 		self.buf += chunk
+
+def union():
+	return Union()
 
 #TODO: still defeated by line buffering
 class Engine(Plumbing):
@@ -174,6 +186,9 @@ class Engine(Plumbing):
 			return b''
 		return data
 
+def engine(command):
+	return Engine(command)
+
 class Turbine(Plumbing):
 	def __init__(self, func):
 		super(Turbine, self).__init__()
@@ -182,7 +197,7 @@ class Turbine(Plumbing):
 		self.input_buf = b''
 
 	def read(self, chunk_size):
-		data = b''
+		data = self.output_buf
 		while len(data) < chunk_size:
 			backup, output = self.func(self.input_buf)	
 			self.input_buf = backup
