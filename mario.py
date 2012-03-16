@@ -1,5 +1,6 @@
 from io import TextIOBase 
-from socket import _socketobject as socket_object
+from collections import Iterator
+from socket import socket as SocketObj
 import json
 import doctest
 
@@ -70,7 +71,7 @@ class Pipe(Plumbing):
 	def __init__(self, f):
 		super(Pipe, self).__init__()
 		self.f = f
-		if isinstance(f, socket_object):
+		if isinstance(f, SocketObj):
 			self._write = self._socket_write
 		elif isinstance(f, TextIOBase):
 			self._write = self._text_write
@@ -79,25 +80,31 @@ class Pipe(Plumbing):
 
 	def _socket_write(self, chunk):
 		self.f.sendall(chunk)
+		self.f.flush()
 	
 	def _text_write(self, chunk):
 		self.f.buffer.write(chunk)
+		self.f.buffer.flush()
 
 	def _file_write(self, chunk):
 		self.f.write(chunk)
+		self.f.flush()
 
 	def write(self, chunk):
 		self._write(chunk)
 
 	def close(self):
-		self.f.close()
+		if hasattr(self.f, 'close'): self.f.close()
 
 class Pump(Plumbing):
 	def __init__(self, f):
 		super(Pump, self).__init__()
 		self.f = f
-		if isinstance(f, socket_object):
+		if isinstance(f, SocketObj):
 			self._read = self._socket_read
+		elif isinstance(f, Iterator):
+			self.buf = bytearray()
+			self._read = self._generator_read
 		elif isinstance(f, TextIOBase):
 			self._read = self._text_read
 		else:
@@ -105,6 +112,14 @@ class Pump(Plumbing):
 
 	def _socket_read(self, chunk_size):
 		return self.f.recv(chunk_size)
+
+	def _generator_read(self, chunk_size):
+		data = self.buf
+		while len(data) < chunk_size:
+			data += next(self.f)
+
+		self.buf = data[chunk_size:]
+		return data[:chunk_size]
 
 	def _text_read(self, chunk_size):
 		return self.f.buffer.read(chunk_size)
@@ -119,21 +134,7 @@ class Pump(Plumbing):
 		return data
 
 	def close(self):
-		self.f.close()
-
-class Source(Plumbing):
-	def __init__(self, func):
-		super(Source, self).__init__()
-		self.func = func
-		self.buf = b''
-
-	def read(self, chunk_size):
-		data = self.buf
-		while len(data) < chunk_size:
-			data += self.func()
-
-		self.buf = data[chunk_size:]
-		return data[:chunk_size]
+		if hasattr(self.f, 'close'): self.f.close()
 
 class Union(Plumbing):
 	def __init__(self):

@@ -33,13 +33,13 @@ This works with any file-like object, like sockets:
 It also works with generators, including ones you write yourself:
 
 	>>> from time import sleep
-	>>> from mario import Source
+	>>> from mario import Pump
 	>>> def r():
 	...		while True:
 	...			sleep(1)
 	...			yield b'doo\n'
 	... 
-	>>> Pump(r()).pipe(sys.stdout).start(chunk_size = 2)
+	>>> Pump(r()).pipe(sys.stdout).start(chunk_size=4)
 	doo
 	doo
 	doo
