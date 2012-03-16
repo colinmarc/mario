@@ -13,7 +13,7 @@ Read from files:
 
 	>>> import mario
 	>>> import sys
-	>>> p = mario.Pump(open('test.txt'))
+	>>> p = mario.pump(open('test.txt'))
 	>>> p.pipe(sys.stdout)
 	>>> p.start()
 	but our princess is in another castle!
@@ -30,7 +30,7 @@ This works with any file-like object, like sockets:
 	sock, sockaddr = echoserver.accept()
 
 	#pipe the socket back into itself	
-	mario.Pump(sock).pipe(sock).start()
+	mario.pump(sock).pipe(sock).start()
 
 (to test this, run the script and then telnet localhost 9599)
 
@@ -43,7 +43,7 @@ It also works with generators, including ones you write yourself:
 	...			sleep(1)
 	...			yield b'doo\n'
 	... 
-	>>> mario.Pump(r()).pipe(sys.stdout).start(chunk_size=4)
+	>>> mario.pump(r()).pipe(sys.stdout).start(chunk_size=4)
 	doo
 	doo
 	doo
@@ -53,7 +53,7 @@ You can wrap a process, and pipe data to stdin and pump from stdout:
 
 	>>> import mario
 	>>> import sys
-	>>> mario.Engine('cowsay "moo!"').pipe(sys.stdout).start()
+	>>> mario.engine('cowsay "moo!"').pipe(sys.stdout).start()
 	 ______
 	< moo! >
 	 ------
@@ -71,11 +71,11 @@ Or wrap your own stream manglers. This would work for parsers, for example. The 
 	...		if len(split) > 1:
 	...			# split sentences onto separate lines, and return the rest after the 
 	...			# last period to parse with the next chunk
-	...			return (split[1][1:], split[0].replace(b'.', '.\n') + '.\n')
+	...			return (split[1][1:], split[0].replace(b'. ', b'.\n') + b'.\n')
 	... 	else:
 	...			return (chunk, b'')
 	...
-	>>> p = mario.Pump(open('paragraph.txt')).pipe(newlines).pipe(sys.stdout)
+	>>> p = mario.pump(open('paragraph.txt')).pipe(newlines).pipe(sys.stdout)
 	>>> p.start(chunk_size=16)
 	The three stared heavily as the fog inside the ball began to disappear.	
 	The image inside the crystal ball was a short clip of Daisy and Rosalina cuddling Mario and kissing his cheek.
