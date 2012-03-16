@@ -54,9 +54,9 @@ You can wrap a process, and pipe data to stdin and pump from stdout:
 	>>> import mario
 	>>> import sys
 	>>> mario.Engine('cowsay "moo!"').pipe(sys.stdout).start()
-	 ________________________________________
-	< but our princess is in another castle! >
-	 ----------------------------------------
+	 ______
+	< moo! >
+	 ------
 			\   ^__^
 			 \  (oo)\_______
 				(__)\       )\/\
