@@ -11,35 +11,39 @@ Usage:
 
 Read from files:
 
+	>>> import mario
 	>>> import sys
-	>>> from mario import Pump
-	>>> p = Pump(open('test.txt'))
+	>>> p = mario.Pump(open('test.txt'))
 	>>> p.pipe(sys.stdout)
 	>>> p.start()
 	but our princess is in another castle!
 
 This works with any file-like object, like sockets:
 
-	>>> import socket
-	>>> from mario import Pump
-	>>> echoserver = socket.socket()
-	>>> echoserver.bind(('', 9599))
-	>>> echoserver.listen(1)
-	>>> sock, sockaddr = echoserver.accept()
-	>>> Pump(sock).pipe(sock).start() #pipe it back into itself
+	import mario
+	import socket
+	
+	#make a socket server
+	echoserver = socket.socket()
+	echoserver.bind(('', 9599))
+	echoserver.listen(1)
+	sock, sockaddr = echoserver.accept()
 
-(to test this, telnet localhost 9599)
+	#pipe the socket back into itself	
+	mario.Pump(sock).pipe(sock).start()
+
+(to test this, run the script and then telnet localhost 9599)
 
 It also works with generators, including ones you write yourself:
 
+	>>> import mario
 	>>> from time import sleep
-	>>> from mario import Pump
 	>>> def r():
 	...		while True:
 	...			sleep(1)
 	...			yield b'doo\n'
 	... 
-	>>> Pump(r()).pipe(sys.stdout).start(chunk_size=4)
+	>>> mario.Pump(r()).pipe(sys.stdout).start(chunk_size=4)
 	doo
 	doo
 	doo
@@ -47,9 +51,9 @@ It also works with generators, including ones you write yourself:
 
 You can wrap a process, and pipe data to stdin and pump from stdout:
 
-	>>> from mario import Engine
+	>>> from mario import Pump, Engine
 	>>> p = Pump(open('test.txt')).pipe(Engine('cowsay')).pipe(sys.stdout)
-	>>> p.start(chunk_size=1)
+	>>> p.start()
 	 ________________________________________
 	< but our princess is in another castle! >
 	 ----------------------------------------
@@ -61,7 +65,7 @@ You can wrap a process, and pipe data to stdin and pump from stdout:
 
 Or wrap your own stream manglers. This would work for parsers, for example. The function you wrap should return a tuple of ``(backup, output)``, where backup is the data to put back into the buffer for next time.
 
-	>>> from mario import Pump, Turbine
+	>>> import mario
 	>>> def newlines(chunk):
 	...		split = chunk.rsplit(b'.', 1)
 	...		if len(split) > 1:
@@ -70,7 +74,8 @@ Or wrap your own stream manglers. This would work for parsers, for example. The 
 	...			return (split[1][1:], split[0].replace(b'.', '.\n') + '.\n')
 	... 	else:
 	...			return (chunk, b'')
-	>>> p = Pump(open('paragraph.txt')).pipe(newlines).pipe(sys.stdout)
+	...
+	>>> p = mario.Pump(open('paragraph.txt')).pipe(newlines).pipe(sys.stdout)
 	>>> p.start(chunk_size=16)
 	The three stared heavily as the fog inside the ball began to disappear.	
 	The image inside the crystal ball was a short clip of Daisy and Rosalina cuddling Mario and kissing his cheek.
