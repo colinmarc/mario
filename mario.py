@@ -1,5 +1,9 @@
 import os
-from io import TextIOBase 
+from io import TextIOBase, RawIOBase
+try:
+	file
+except NameError:
+	file = RawIOBase
 import fcntl
 from collections import Iterator
 from socket import socket as SocketObj
@@ -111,6 +115,8 @@ class Pump(Plumbing):
 			self._read = self._socket_read
 		elif isinstance(f, TextIOBase):
 			self._read = self._text_read
+		elif isinstance(f, file):
+			self._read = self._file_read
 		elif isinstance(f, Iterator):
 			self.buf = bytearray()
 			self._read = self._generator_read
