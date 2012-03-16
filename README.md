@@ -2,7 +2,7 @@
 Mario.py
 ========
 
-This is a convenience library for binary and text streams. It really only works with the former right now. It should work in Python 2.7 to 3.x.
+This is a convenience library for binary and text streams. It should work in Python 2.7 to 3.x.
 
 **warning: still under development. stuff might break**
 
