@@ -46,11 +46,15 @@ It also works with generators, including ones you write yourself:
 You can wrap a process, and pipe data to stdin and pump from stdout:
 
 	>>> from mario import Engine
-	>>> e = Engine('cat')
-	>>> e.pipe(sys.stdout)
-	>>> e.write('dog')
-	>>> e.start(chunk_size=1)
-	dog
+	>>> Pump(open('test.txt')).pipe(Engine('cowsay')).pipe(sys.stdout).start(chunk_size=1)
+	 ________________________________________
+	< but our princess is in another castle! >
+	 ----------------------------------------
+			\   ^__^
+			 \  (oo)\_______
+				(__)\       )\/\
+					||----w |
+					||     ||
 
 Or wrap your own stream manglers. This would work for parsers, for example. The function you wrap should return a tuple of ``(backup, output)``, where backup is the data to put back into the buffer for next time.
 
