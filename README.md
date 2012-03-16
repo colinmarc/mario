@@ -13,7 +13,9 @@ Read from files:
 
 	>>> import sys
 	>>> from mario import Pump
-	>>> Pump(open('test.txt')).pipe(sys.stdout).start()
+	>>> p = Pump(open('test.txt'))
+	>>> p.pipe(sys.stdout)
+	>>> p.start()
 	but our princess is in another castle!
 
 This works with any file-like object, like sockets:
@@ -46,7 +48,8 @@ It also works with generators, including ones you write yourself:
 You can wrap a process, and pipe data to stdin and pump from stdout:
 
 	>>> from mario import Engine
-	>>> Pump(open('test.txt')).pipe(Engine('cowsay')).pipe(sys.stdout).start(chunk_size=1)
+	>>> p = Pump(open('test.txt')).pipe(Engine('cowsay')).pipe(sys.stdout)
+	>>> p.start(chunk_size=1)
 	 ________________________________________
 	< but our princess is in another castle! >
 	 ----------------------------------------
@@ -62,10 +65,13 @@ Or wrap your own stream manglers. This would work for parsers, for example. The 
 	>>> def newlines(chunk):
 	...		split = chunk.rsplit(b'.', 1)
 	...		if len(split) > 1:
+	...			# split sentences onto separate lines, and return the rest after the 
+	...			# last period to parse with the next chunk
 	...			return (split[1][1:], split[0].replace(b'.', '.\n') + '.\n')
 	... 	else:
 	...			return (chunk, b'')
-	>>> Pump(open('paragraph.txt')).pipe(newlines).pipe(sys.stdout).start(chunk_size=16)
+	>>> p = Pump(open('paragraph.txt')).pipe(newlines).pipe(sys.stdout)
+	>>> p.start(chunk_size=16)
 	The three stared heavily as the fog inside the ball began to disappear.	
 	The image inside the crystal ball was a short clip of Daisy and Rosalina cuddling Mario and kissing his cheek.
 	Peach felt her heart shatter into a million pieces.
