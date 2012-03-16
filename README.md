@@ -27,10 +27,11 @@ This works with any file-like object, like sockets:
 	>>> echoserver.bind(('', 9599))
 	>>> echoserver.listen(1)
 	>>> sock, sockaddr = echoserver.accept()
-	>>> sockfile = sock.makefile()
-	>>> p = Pump(sockfile)
-	>>> p.pipe(sockfile) #pipe it back into itself
-	>>> p.start(chunk_size=16)
+	>>> p = Pump(sock)
+	>>> p.pipe(sock) #pipe it back into itself
+	>>> p.start()
+
+(to test this, telnet localhost 9599)
 
 It also works with generators, including ones you write yourself:
 

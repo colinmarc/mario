@@ -1,4 +1,5 @@
 from io import TextIOBase 
+from socket import _socketobject as socket_object
 import json
 import doctest
 
@@ -12,7 +13,8 @@ def _run_pipeline(pipeline, chunk_size=CHUNK_SIZE):
 		
 			chunk = part.read(chunk_size)
 			if not chunk and i == 0:
-				pipeline.pop(0)
+				dead_part = pipeline.pop(0)
+				dead_part.close()
 				break
 
 			next_part = pipeline[i+1]
@@ -21,18 +23,19 @@ def _run_pipeline(pipeline, chunk_size=CHUNK_SIZE):
 			else:
 				next_part.write(chunk)
 			if hasattr(next_part, 'flush'):
-				next_part.flush()
-			
+				next_part.flush()			
+
 class Plumbing(object):	
 	def __init__(self):
 		self.parent = None
 		self.child = None
 
 	def pipe(self, f):
+		if not isinstance(f, Plumbing):
+			f = Pipe(f)
 		self.child = f
-		if isinstance(f, Plumbing):
-			f.parent = self
-			return f
+		f.parent = self
+		return f
 
 	def start(self, chunk_size=None):
 		if not chunk_size:
@@ -55,19 +58,64 @@ class Plumbing(object):
 	def write(self, chunk):
 		raise IOError("device is not writeable")
 
+	#abstract
+	def close(self):
+		pass
+
+class Pipe(Plumbing):
+	def __init__(self, f):
+		super(Pipe, self).__init__()
+		self.f = f
+		if isinstance(f, socket_object):
+			self._write = self._socket_write
+		elif isinstance(f, TextIOBase):
+			self._write = self._text_write
+		else:
+			self._write = self._file_write
+
+	def _socket_write(self, chunk):
+		self.f.sendall(chunk)
+	
+	def _text_write(self, chunk):
+		self.f.buffer.write(chunk)
+
+	def _file_write(self, chunk):
+		self.f.write(chunk)
+
+	def write(self, chunk):
+		self._write(chunk)
+
+	def close(self):
+		self.f.close()
+
 class Pump(Plumbing):
 	def __init__(self, f):
 		super(Pump, self).__init__()
-		if isinstance(f, TextIOBase):
-			self.f = f.buffer
+		self.f = f
+		if isinstance(f, socket_object):
+			self._read = self._socket_read
+		elif isinstance(f, TextIOBase):
+			self._read = self._text_read
 		else:
-			self.f = f
+			self._read = self._file_read
+
+	def _socket_read(self, chunk_size):
+		return self.f.recv(chunk_size)
+
+	def _text_read(self, chunk_size):
+		return self.f.buffer.read(chunk_size)
+
+	def _file_read(self, chunk_size):
+		return self.f.read(chunk_size)
 
 	def read(self, chunk_size):
-		data = self.f.read(chunk_size)
+		data = self._read(chunk_size)
 		if not data:
 			return b''
 		return data
+
+	def close(self):
+		self.f.close()
 
 class Source(Plumbing):
 	def __init__(self, func):
